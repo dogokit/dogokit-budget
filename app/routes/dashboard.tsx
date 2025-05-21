@@ -3,6 +3,8 @@ import { useLoaderData } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import type { Route } from "./+types/dashboard";
+import { prisma } from "~/lib/db.server";
+import { requireUserId } from "~/session.server";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,35 +13,49 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader() {
-  // TODO: Fetch data from API
+export async function loader({ request }: { request: Request }) {
+  // const userId = await requireUserId(request);
+
+  // Get all transactions for the current user
+  const transactions = await prisma.transaction.findMany({
+    where: { user: { email: "test@example.com" } },
+    include: {
+      category: {
+        select: { name: true },
+      },
+      account: {
+        select: { name: true },
+      },
+    },
+    orderBy: { date: "desc" },
+    take: 10, // Limit to 10 most recent transactions
+  });
+
+  // Calculate totals
+  const income = transactions
+    .filter((t) => t.type === "INCOME")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const expenses = transactions
+    .filter((t) => t.type === "EXPENSE")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const balance = income - expenses;
+
+  // Format transactions for the UI
+  const recentTransactions = transactions.map((t) => ({
+    id: t.id,
+    description: t.description || "No description",
+    amount: t.type === "EXPENSE" ? -t.amount : t.amount,
+    date: t.date.toISOString().split("T")[0],
+    category: t.category?.name || "Uncategorized",
+  }));
+
   return {
-    balance: 1250.75,
-    income: 3000,
-    expenses: 1749.25,
-    recentTransactions: [
-      {
-        id: 1,
-        description: "Grocery Shopping",
-        amount: -125.5,
-        date: "2025-05-21",
-        category: "Food",
-      },
-      {
-        id: 2,
-        description: "Salary",
-        amount: 3000,
-        date: "2025-05-20",
-        category: "Income",
-      },
-      {
-        id: 3,
-        description: "Electric Bill",
-        amount: -75.25,
-        date: "2025-05-18",
-        category: "Bills",
-      },
-    ],
+    balance,
+    income,
+    expenses,
+    recentTransactions,
   };
 }
 
@@ -101,12 +117,13 @@ export default function Dashboard() {
             {recentTransactions.map((transaction: any) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
               >
                 <div>
                   <p className="font-medium">{transaction.description}</p>
                   <p className="text-sm text-muted-foreground">
-                    {transaction.category} • {transaction.date}
+                    {transaction.category} •{" "}
+                    {new Date(transaction.date).toLocaleDateString()}
                   </p>
                 </div>
                 <div
@@ -114,8 +131,8 @@ export default function Dashboard() {
                     transaction.amount >= 0 ? "text-green-600" : "text-red-600"
                   }`}
                 >
-                  {transaction.amount >= 0 ? "+" : ""}
-                  {transaction.amount.toFixed(2)}
+                  {transaction.amount >= 0 ? "+" : ""}$
+                  {Math.abs(transaction.amount).toFixed(2)}
                 </div>
               </div>
             ))}

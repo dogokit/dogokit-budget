@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
 
 const routes = [
-  { name: "Dashboard", path: "/dashboard" },
+  { name: "Dashboard", path: "/" },
   { name: "Transactions", path: "/transactions" },
   { name: "Categories", path: "/categories" },
   { name: "Reports", path: "/reports" },
