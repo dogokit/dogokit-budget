@@ -14,11 +14,11 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ request }: { request: Request }) {
-  // const userId = await requireUserId(request);
+  const userId = await requireUserId(request);
 
   // Get all transactions for the current user
   const transactions = await prisma.transaction.findMany({
-    where: { user: { email: "test@example.com" } },
+    where: { userId },
     include: {
       category: {
         select: { name: true },
