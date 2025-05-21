@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  name          String?
+  password      String
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  currency      Currency     @default(USD)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Account {
+  id           String       @id @default(uuid())
+  name         String
+  balance      Float        @default(0)
+  color        String      
+  icon         String
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("accounts")
+}
+
+model Category {
+  id            String       @id @default(uuid())
+  name          String
+  type          TransactionType
+  color         String
+  icon          String
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  transactions  Transaction[]
+  parentId      String?
+  parent        Category?    @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children      Category[]   @relation("CategoryToCategory")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  amount      Float
+  type        TransactionType
+  date        DateTime        @default(now())
+  description String?
+  accountId   String
+  account     Account         @relation(fields: [accountId], references: [id])
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id])
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
+  JPY
+  // Add more currencies as needed
+}

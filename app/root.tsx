@@ -6,9 +6,9 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-
 import type { Route } from "./+types/root";
-import "./app.css";
+import { MainNav } from "~/components/main-nav";
+import "~/app.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,14 +25,14 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="min-h-screen bg-background font-sans antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -42,7 +42,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <div className="relative flex min-h-screen flex-col">
+      <header className="border-b sticky top-0 z-40 bg-background">
+        <div className="container flex h-16 items-center justify-between py-4">
+          <div className="flex items-center gap-6 md:gap-10">
+            <h1 className="text-xl font-bold">Budget Tracker</h1>
+            <MainNav />
+          </div>
+        </div>
+      </header>
+      <main className="flex-1 container py-6">
+        <Outlet />
+      </main>
+    </div>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
